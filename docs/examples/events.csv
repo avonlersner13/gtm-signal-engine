@@ -1,0 +1,4 @@
+user_id,ts,event_type,repo_id,props
+ux1,2026-10-03T12:00:00Z,regression_detected,rx1,"{""impact_pct"": 14.2, ""benchmark"": ""parse_large""}"
+ux2,2026-10-04T12:00:00+02:00,report_viewed,rx1,
+ux1,2026-10-05T12:00:00Z,macro_runner_minutes,rx1,"{""runner"": ""graviton"", ""minutes"": 35.5}"

@@ -1,0 +1,3 @@
+{"user_id": "ux1", "email": "ada.vell@quartzlabs.example", "name": "Ada Vell", "title": "Staff Engineer", "github_login": "adavell", "github_orgs": ["quartzlabs"]}
+{"user_id": "ux2", "email": "bo.rinn@mail.example", "name": "Bo Rinn", "title": "Platform Engineer", "github_login": "borinn", "github_orgs": ["quartzresearch"]}
+{"user_id": "ux3", "email": "quartzlabs-ci@noreply.github.example", "name": "quartzlabs-ci[bot]", "title": "Bot", "github_login": "quartzlabs-ci[bot]", "github_orgs": ["quartzlabs"]}

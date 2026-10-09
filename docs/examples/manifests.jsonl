@@ -1,0 +1,2 @@
+{"repo_id": "rx1", "path": "Cargo.toml", "content": "[dev-dependencies]\ncriterion = { package = \"codspeed-criterion-compat\", version = \"*\" }\n"}
+{"repo_id": "rx2", "path": "pyproject.toml", "content": "[dependency-groups]\ndev = [\"pytest-benchmark>=4\"]\n"}
