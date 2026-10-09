@@ -1,0 +1,23 @@
+# pricing.toml: documented CodSpeed pricing (public docs, Oct 2026) plus the
+# assumptions this demo uses to project revenue. The assumptions are hypotheses.
+
+[seats]
+free_cap = 5                       # Free plan: up to 5 active users on private repos
+pro_annual_per_user_month = 15.0   # Pro, billed annually (USD / user / month)
+pro_monthly_per_user_month = 20.0  # Pro, billed monthly
+trial_days = 14                    # exceeding 5 users starts a 14-day Pro trial
+
+[runners]
+graviton_free_minutes = 600        # free macro-runner minutes per month
+graviton_per_minute = 0.032
+ryzen_per_minute = 0.06            # "contact us" on Pro
+
+[enterprise]
+price = "custom"
+features = ["SSO/SAML", "role management", "SOC 2 Type II reports", "on-prem deployment", "custom/GPU runners", "Performance Data API", "dedicated GitHub App", "invoiced billing", "SLAs", "dedicated Slack channel"]
+
+[assumptions]
+# Revenue projection assumptions (hypotheses, shown in every brief).
+seat_growth_lookback_days = 30     # projected users = seats now + growth over the last 30 days
+outbound_adoption_rate = 0.08      # market-only accounts: share of engineers expected to become active
+ryzen_share_if_requested = 0.25    # share of projected walltime minutes on Ryzen once requested

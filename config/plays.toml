@@ -1,0 +1,173 @@
+# plays.toml: the play library. trigger -> play, owner, SLA, message template.
+#
+# Trigger logic lives in signal_engine/plays.py (one small function per trigger name);
+# every threshold it uses lives here under `params`. Higher priority wins as the
+# primary play; the next two become secondary plays. HYPOTHESES, not CodSpeed policy.
+#
+# Template placeholders: {account} {champion} {champion_first} {buyer} {founder}
+# {seats_used} {free_cap} {seats_7d_ago} {trial_days_left} {blocked} {projected_minutes}
+# {trial_ends} {blocked_engineers} {blocked_verb} {free_minutes} {frameworks} {languages} {orgs} {days_since_install} {drop_pct}
+# {security_signals} {fix_prs} {mcp_calls} {regressions_30} {runs_30} {est_arr} {churn_signals}
+
+[org]
+founder_name = "Arthur"
+alert_channel = "#pipeline-alerts"
+alert_min_priority = 70          # plays at or above this priority produce Slack alerts
+account_briefs_top_n = 25        # per-account briefs for the top N plus every founder play
+founder_weekly_capacity = 8      # founder touches listed by name in the brief
+
+[[plays]]
+id = "trial_ending"
+name = "Trial ending"
+trigger = "trial_ending"
+priority = 100
+owner = "founder"
+sla_hours = 24
+pipeline = true
+params = { max_days_left = 5 }
+action = "Founder calls the champion before the trial lapses."
+success_metric = "Plan upgraded before trial end"
+template = "Hi {champion_first}, {founder} here. {seats_used} engineers at {account} have been using CodSpeed and your Pro trial ends {trial_ends}. Could we take 15 minutes this week so nothing gets blocked when it ends?"
+
+[[plays]]
+id = "blocked_users"
+name = "Blocked users"
+trigger = "blocked_users"
+priority = 95
+owner = "founder"
+sla_hours = 8
+pipeline = true
+params = { min_blocked = 1 }
+action = "Same-day outreach to the admin: their engineers are blocked."
+success_metric = "Seats assigned or auto-allocation turned on within 48h"
+template = "Hi {buyer}, heads-up: {blocked_engineers} at {account} {blocked_verb} blocked from CodSpeed runs on private repos because no seat is assigned (automatic seat allocation is off). Want me to walk you through assigning seats, or turn auto-allocation on?"
+
+[[plays]]
+id = "security_review"
+name = "Security review"
+trigger = "security_review"
+priority = 90
+owner = "gtm_engineer"
+sla_hours = 24
+pipeline = true
+params = { window_days = 14 }
+action = "Send the SOC 2 Type II packet and DPA, then founder follow-up."
+success_metric = "Security review closed; Enterprise conversation opened"
+template = "Hi {champion_first}, I saw your team looking at {security_signals}. Here are our SOC 2 Type II report (via trust.codspeed.io) and DPA. Happy to cover SSO/SAML and on-prem options with your security team."
+
+[[plays]]
+id = "runner_overage"
+name = "Runner overage"
+trigger = "runner_overage"
+priority = 85
+owner = "gtm_engineer"
+sla_hours = 48
+pipeline = true
+params = { lookback_days = 30 }
+action = "Pro/Enterprise macro-runner conversation (Graviton overage, Ryzen, budgets)."
+success_metric = "Runner budget agreed or Enterprise volume discount quoted"
+template = "Hi {champion_first}, {account} is on pace for {projected_minutes} Graviton minutes this month (600 are free). Want to look at a runner budget, or the Ryzen runner for steadier walltime numbers?"
+
+[[plays]]
+id = "multi_team_spread"
+name = "Multi-team spread"
+trigger = "multi_team_spread"
+priority = 80
+owner = "gtm_engineer"
+sla_hours = 72
+pipeline = true
+params = { min_orgs = 2 }
+action = "Map the account (teams, orgs, admins), then a founder touch."
+success_metric = "Single parent-level agreement covering all orgs"
+template = "Hi {champion_first}, CodSpeed is now running in {orgs} GitHub orgs across {account}. Would it help to consolidate seats and settings under one plan? Glad to map it with you."
+
+[[plays]]
+id = "cap_approaching"
+name = "Cap approaching"
+trigger = "cap_approaching"
+priority = 75
+owner = "gtm_engineer"
+sla_hours = 72
+pipeline = true
+params = { min_seats_below_cap = 1 }
+action = "Send the champion enablement kit (ROI one-pager, rollout guide, pricing)."
+success_metric = "Champion shares the kit internally; trial starts with a budget owner aware"
+template = "Hi {champion_first}, {account} is at {seats_used}/{free_cap} free seats (up from {seats_7d_ago} last week). Here's a short rollout kit with pricing ($15/user/month on annual billing) for when the next engineer joins."
+
+[[plays]]
+id = "ai_native_power_user"
+name = "AI-native power user"
+trigger = "ai_native_power_user"
+priority = 65
+owner = "founder"
+sla_hours = 120
+pipeline = true
+params = { min_fix_prs_merged = 1 }
+action = "Case-study and expansion candidate: ask for feedback, offer an AI workflow review."
+success_metric = "Case study agreed or expansion to another team"
+template = "Hi {champion_first}, your team merged {fix_prs} @codspeedbot fix PRs and makes {mcp_calls} MCP calls a month. Would you share what's working? We'd love to feature {account}'s workflow."
+
+[[plays]]
+id = "walltime_only_stack"
+name = "Walltime-only stack"
+trigger = "walltime_only_stack"
+priority = 60
+owner = "gtm_engineer"
+sla_hours = 120
+pipeline = true
+params = { min_walltime_runs = 1 }
+action = "Macro-runner value story for Go/JVM teams (walltime is their only mode)."
+success_metric = "Runner minutes grow; runner budget set"
+template = "Hi {champion_first}, since {languages} benchmarks run in walltime mode, macro runners are what keep the numbers stable. Here's how other {languages} teams size their runner minutes."
+
+[[plays]]
+id = "churn_risk"
+name = "Churn risk"
+trigger = "churn_risk"
+priority = 55
+owner = "gtm_engineer"
+sla_hours = 72
+pipeline = false
+params = { min_ignored = 3, drop_pct = 50.0, min_prior_runs = 10, window_days = 30 }
+action = "Health check: find out what broke (noise, thresholds, flaky benchmarks)."
+success_metric = "Run volume recovers; informational check reverted"
+template = "Hi {champion_first}, I noticed some changes at {account}: {churn_signals}. Is something noisy or getting in your way? Happy to help tune thresholds or fix flaky benchmarks."
+
+[[plays]]
+id = "activation_rescue"
+name = "Activation rescue"
+trigger = "activation_rescue"
+priority = 40
+owner = "automated"
+sla_hours = 24
+pipeline = false
+params = { min_days_since_install = 7 }
+action = "Automated nudge offering Wizard setup (AI Setup opens the PR for you)."
+success_metric = "baseline_created within 7 days of the nudge"
+template = "Hi {champion_first}, you installed CodSpeed on {account} {days_since_install} days ago but there's no baseline yet. Click Start AI Setup and the Wizard will find or write benchmarks, add the CI workflow and open a PR."
+
+[[plays]]
+id = "outbound"
+name = "Outbound"
+trigger = "outbound"
+priority = 35
+owner = "gtm_engineer"
+sla_hours = 168
+pipeline = true
+params = { min_fit = 45.0 }
+action = "Personalized outbound sequence naming their benchmarking framework."
+success_metric = "Reply rate; signup from the target org"
+template = "Hi, I noticed {account} already benchmarks with {frameworks}. CodSpeed runs those same benchmarks in CI and comments on every PR when performance changes. Setup takes one PR."
+
+[[plays]]
+id = "not_addressable"
+name = "Not addressable yet"
+trigger = "not_addressable"
+priority = 5
+owner = "automated"
+sla_hours = 0
+pipeline = false
+params = {}
+action = "Log as product feedback (unsupported stack). No outreach."
+success_metric = "Counted in product-feedback report"
+template = "Product feedback: {account} benchmarks with {frameworks}, which CodSpeed does not support yet."

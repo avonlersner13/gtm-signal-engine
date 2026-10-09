@@ -1,0 +1,173 @@
+# signals.toml: every rule, threshold, weight and decay half-life the engine uses.
+#
+# HYPOTHESES ONLY. This is an independent demo. Internal event names, weights and
+# thresholds are guesses about what predicts revenue for a product like CodSpeed;
+# none of them come from CodSpeed. Tune them against your own closed-won data.
+
+[general]
+now = "2026-10-12T09:00:00-07:00"       # fixed clock: every run is reproducible
+seed = 42
+half_life_days = 14.0                    # recency decay for intent signals
+windows_days = [7, 14, 30, 90]           # feature windows
+fit_weight = 0.4                         # priority = fit_weight*fit + intent_weight*intent + momentum
+intent_weight = 0.6
+momentum_per_point = 0.3                 # priority points per point of week-over-week intent delta
+momentum_cap = 10.0
+
+[identity]
+# Confidence per step of the resolution waterfall.
+corporate_domain = 1.0
+alias_domain = 0.95
+github_org = 0.9
+freemail_github_org = 0.8
+commit_email_domain = 0.7
+bot_suffix = "[bot]"
+freemail_domains = [
+    "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "yahoo.com",
+    "icloud.com", "me.com", "proton.me", "protonmail.com", "fastmail.com", "aol.com",
+    "mail.example", "inbox.example", "webmail.example", "post.example",
+]
+
+[personas]
+# Titles are matched against keywords in this order; first match wins.
+order = ["vp_cto", "eng_manager", "platform_devex", "staff_principal", "ic_engineer"]
+default = "ic_engineer"
+
+[personas.keywords]
+vp_cto = ["cto", "vp", "vice president", "head of engineering", "chief"]
+eng_manager = ["manager", "director", "lead of"]
+platform_devex = ["platform", "devex", "developer experience", "infrastructure", "devops", "sre", "build"]
+staff_principal = ["staff", "principal", "distinguished", "architect"]
+ic_engineer = ["engineer", "developer", "programmer", "maintainer"]
+
+[lifecycle]
+engaged_min_run_days = 3                 # runs on 3+ distinct days...
+engaged_window_days = 14                 # ...within any 14-day window
+pql_min_user_intent = 10.0               # engaged user whose own intent (same weights/scale) >= this is a PQL
+pqa_min_engaged_users = 2
+pqa_engaged_recency_days = 30            # PQA counts users engaged within the last 30 days
+enterprise_intent_events = ["enterprise_page_view", "sso_page_view", "soc2_report_requested", "trust_center_visit"]
+enterprise_intent_window_days = 30
+value_events = ["regression_detected", "regression_acknowledged", "improvement_detected", "required_check_enabled", "flamegraph_viewed", "codspeedbot_fix_pr_merged"]
+value_event_multiplier = 2.0             # buying committee: champion is weighted toward value events
+
+[seats]
+window_days = 30                         # rolling active-user window (billing rule)
+history_days = 90                        # how far back the daily rolling series goes
+active_events = ["pr_authored_private", "report_viewed"]
+
+[fit.eng_headcount]
+# [minimum engineers, points]; the highest band whose minimum is met applies.
+bands = [[0, 4.0], [10, 10.0], [25, 15.0], [75, 20.0], [250, 25.0], [1000, 28.0]]
+
+[fit.language]
+max_points = 25.0
+walltime_only = ["go", "jvm"]            # Go/JVM can only use walltime -> macro runners -> paid minutes
+[fit.language.points]
+rust = 25.0
+cpp = 25.0
+python = 20.0
+node = 16.0
+go = 20.0
+jvm = 18.0
+scala = 3.0
+
+[fit.private_repos]
+max_points = 15.0                        # scaled by private-repo ratio
+
+[fit.industry]
+default = 6.0
+[fit.industry.points]
+devtools = 15.0
+fintech = 15.0
+infrastructure = 15.0
+databases = 15.0
+ai_ml = 14.0
+gaming = 12.0
+ecommerce = 9.0
+healthtech = 8.0
+media = 6.0
+open_source = 4.0
+education = 3.0
+
+[fit.parent_size]
+# [minimum employees across the parent account, points]
+bands = [[0, 0.0], [200, 5.0], [1000, 10.0], [5000, 15.0]]
+
+[fit.market]
+points_per_repo = 4.0                    # repos benchmarking WITHOUT CodSpeed (scanner)
+cap = 12.0
+
+[intent]
+scale = 125.0                            # raw points mapped to 100
+
+# Each event signal: contribution = clamp(weight * decayed_count, cap). Negative weights subtract.
+# Reason placeholders: {n7} {n14} {n30} {n90} (raw counts in that window).
+[intent.signals]
+signed_up = { weight = 1.0, cap = 3.0, reason = "{n30} new signups in 30 days" }
+dashboard_login = { weight = 0.3, cap = 3.0, reason = "{n30} dashboard logins in 30 days" }
+docs_visit = { weight = 0.3, cap = 2.0, reason = "{n30} docs visits in 30 days" }
+demo_requested = { weight = 10.0, cap = 10.0, reason = "{n30} demo requests in 30 days" }
+github_app_installed = { weight = 4.0, cap = 4.0, reason = "GitHub App installed" }
+repo_imported = { weight = 1.5, cap = 6.0, reason = "{n30} repos imported in 30 days" }
+setup_started = { weight = 2.0, cap = 2.0, reason = "setup started" }
+wizard_pr_opened = { weight = 2.0, cap = 2.0, reason = "Wizard opened a setup PR" }
+wizard_pr_merged = { weight = 3.0, cap = 3.0, reason = "Wizard setup PR merged" }
+workflow_committed = { weight = 3.0, cap = 3.0, reason = "CI workflow committed manually" }
+backtest_run = { weight = 2.0, cap = 2.0, reason = "backtest run to build history" }
+baseline_created = { weight = 6.0, cap = 6.0, reason = "baseline created on the default branch" }
+first_pr_report = { weight = 6.0, cap = 6.0, reason = "first PR performance report posted" }
+run_completed = { weight = 0.15, cap = 10.0, reason = "{n30} benchmark runs in 30 days" }
+cli_auth_login = { weight = 1.0, cap = 2.0, reason = "{n30} CLI logins in 30 days" }
+local_upload = { weight = 0.5, cap = 2.0, reason = "{n30} local uploads in 30 days" }
+sharding_enabled = { weight = 4.0, cap = 4.0, reason = "sharding enabled for a large suite" }
+partial_runs_enabled = { weight = 3.0, cap = 3.0, reason = "partial runs enabled" }
+mongodb_instrument_enabled = { weight = 4.0, cap = 4.0, reason = "MongoDB instrument (beta) enabled" }
+regression_detected = { weight = 1.0, cap = 6.0, reason = "{n30} regressions caught in 30 days" }
+regression_acknowledged = { weight = 2.0, cap = 6.0, reason = "{n30} regressions acknowledged in 30 days" }
+improvement_detected = { weight = 0.5, cap = 3.0, reason = "{n30} improvements measured in 30 days" }
+required_check_enabled = { weight = 8.0, cap = 8.0, reason = "CodSpeed check made required in branch protection" }
+informational_check_enabled = { weight = -8.0, cap = -8.0, reason = "check switched to informational (non-blocking)" }
+threshold_changed = { weight = 1.0, cap = 2.0, reason = "regression threshold tuned" }
+flamegraph_viewed = { weight = 0.5, cap = 4.0, reason = "{n30} flame graphs opened in 30 days" }
+codspeedbot_mention = { weight = 1.0, cap = 5.0, reason = "{n30} @codspeedbot requests in 30 days" }
+codspeedbot_fix_pr_opened = { weight = 2.0, cap = 4.0, reason = "{n30} @codspeedbot fix PRs opened in 30 days" }
+codspeedbot_fix_pr_merged = { weight = 4.0, cap = 8.0, reason = "{n30} @codspeedbot fix PRs merged in 30 days" }
+wizard_disabled = { weight = -6.0, cap = -6.0, reason = "Wizard / @codspeedbot disabled by an admin" }
+mcp_connected = { weight = 5.0, cap = 5.0, reason = "CodSpeed MCP server connected" }
+mcp_tool_call = { weight = 0.3, cap = 4.0, reason = "{n30} MCP tool calls in 30 days" }
+skill_installed = { weight = 2.0, cap = 3.0, reason = "agent skill installed" }
+benchmark_ignored = { weight = -1.5, cap = -6.0, reason = "{n30} benchmarks ignored in 30 days" }
+benchmark_archived = { weight = -0.5, cap = -3.0, reason = "{n30} benchmarks archived in 30 days" }
+seat_removed = { weight = -4.0, cap = -8.0, reason = "{n30} seats removed in 30 days" }
+repo_deleted = { weight = -3.0, cap = -6.0, reason = "{n30} CodSpeed repos removed in 30 days" }
+pr_authored_private = { weight = 0.2, cap = 8.0, reason = "{n30} private-repo PRs in 30 days" }
+report_viewed = { weight = 0.2, cap = 5.0, reason = "{n30} performance reports opened in 30 days" }
+free_limit_exceeded = { weight = 6.0, cap = 6.0, reason = "free 5-user limit exceeded" }
+trial_started = { weight = 6.0, cap = 6.0, reason = "Pro trial started" }
+trial_ending = { weight = 2.0, cap = 4.0, reason = "trial-ending notices sent" }
+user_blocked_no_seat = { weight = 3.0, cap = 9.0, reason = "{n30} block events for users without a seat" }
+seat_added = { weight = 2.0, cap = 6.0, reason = "{n30} seats added in 30 days" }
+auto_seat_allocation_toggled = { weight = 0.5, cap = 0.5, reason = "automatic seat allocation toggled" }
+plan_upgraded = { weight = 10.0, cap = 10.0, reason = "upgraded to a paid plan" }
+macro_runner_minutes = { weight = 0.1, cap = 4.0, reason = "{n30} macro-runner jobs in 30 days" }
+ryzen_requested = { weight = 6.0, cap = 6.0, reason = "asked about the Ryzen runner" }
+runner_budget_set = { weight = 4.0, cap = 4.0, reason = "runner budget configured" }
+pricing_page_view = { weight = 2.0, cap = 4.0, reason = "{n14} pricing page views in 14 days" }
+enterprise_page_view = { weight = 4.0, cap = 6.0, reason = "{n14} Enterprise page views in 14 days" }
+sso_page_view = { weight = 5.0, cap = 5.0, reason = "SSO/SAML page viewed" }
+trust_center_visit = { weight = 5.0, cap = 5.0, reason = "Trust Center visited" }
+soc2_report_requested = { weight = 8.0, cap = 8.0, reason = "SOC 2 Type II report requested" }
+security_docs_visit = { weight = 3.0, cap = 5.0, reason = "{n14} security docs visits in 14 days" }
+
+# Derived (non-event) signals computed from seats, scanner, lifecycle and features.
+[intent.derived]
+over_cap = { points = 14.0, reason = "{seats_used} active users, {free_cap}-seat cap exceeded{trial_suffix}" }
+trial_active = { points = 6.0 }
+near_cap = { points = 6.0, reason = "{seats_used}/{free_cap} free seats used, up from {seats_7d_ago} a week ago" }
+blocked_users = { per_unit = 5.0, cap = 15.0, reason = "{blocked_engineers} blocked without a seat (auto-allocation off)" }
+runner_overage = { points = 10.0, reason = "projected {projected_minutes} Graviton minutes this month vs {free_minutes} free" }
+multi_org = { per_unit = 4.0, cap = 8.0, reason = "{orgs} GitHub orgs active under one parent account" }
+engaged_users = { per_unit = 2.0, cap = 8.0, reason = "{engaged} engaged engineers" }
+market_benchmarks = { per_unit = 3.0, cap = 9.0, reason = "{repos} repos benchmark with {frameworks} but not CodSpeed" }
+run_drop = { points = -8.0, min_prior_runs = 10, drop_pct = 50.0, reason = "runs down {drop_pct}% vs the prior 30 days ({runs_30} vs {runs_prev_30})" }
