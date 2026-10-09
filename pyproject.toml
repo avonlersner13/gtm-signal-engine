@@ -1,0 +1,48 @@
+[project]
+name = "gtm-signal-engine"
+version = "0.1.0"
+description = "Pipeline-generation engine for a product-led developer-tools company (independent demo modeled on CodSpeed)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+signal-engine = "signal_engine.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/signal_engine"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-codspeed>=4.0",
+    "ruff>=0.8",
+    "coverage>=7.6",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "benchmarks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4"]
+
+[tool.coverage.run]
+source = ["signal_engine"]
+omit = ["*/signal_engine/ingest/github_live.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if __name__ == .__main__.:"]

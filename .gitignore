@@ -1,0 +1,25 @@
+# Generated outputs and local-only data (the live GitHub adapter writes to local/)
+local/
+out/
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# CodSpeed local results
+.codspeed/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
