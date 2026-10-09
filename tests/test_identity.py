@@ -56,7 +56,7 @@ def test_github_org_with_unknown_domain(cfg) -> None:
 
 
 def test_freemail_plus_github_org(cfg) -> None:
-    r = resolve(cfg, user("u1", "pat@gmail.com", orgs=["ACME"]))
+    r = resolve(cfg, user("u1", "pat@mail.example", orgs=["ACME"]))
     assert (r.company_id, r.method, r.confidence) == ("c1", "freemail_github_org", 0.8)
 
 
@@ -68,7 +68,7 @@ def test_commit_email_domain(cfg) -> None:
 
 
 def test_unresolved(cfg) -> None:
-    r = resolve(cfg, user("u1", "pat@gmail.com", orgs=["unknown-org"]), commit="nowhere.example")
+    r = resolve(cfg, user("u1", "pat@mail.example", orgs=["unknown-org"]), commit="nowhere.example")
     assert (r.company_id, r.account_id, r.method, r.confidence) == (None, None, "unresolved", 0.0)
 
 
@@ -79,9 +79,9 @@ def test_waterfall_order_prefers_email_over_org(cfg) -> None:
 
 
 def test_freemail_domain_never_matches_a_company(cfg) -> None:
-    gmail_co = company("c9", domain="gmail.com", github_orgs=())
-    idx = build_index([gmail_co])
-    assert resolve_user(user("u1", "pat@gmail.com"), idx, None, cfg).method == "unresolved"
+    freemail_co = company("c9", domain="webmail.example", github_orgs=())
+    idx = build_index([freemail_co])
+    assert resolve_user(user("u1", "pat@mail.example"), idx, None, cfg).method == "unresolved"
 
 
 def test_subsidiary_rolls_up_to_parent_but_keeps_child(cfg) -> None:
