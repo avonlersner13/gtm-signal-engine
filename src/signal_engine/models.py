@@ -354,6 +354,7 @@ class PlayMatch:
     priority: int
     action: str
     message: str
+    note: str = ""
 
 
 @dataclass(frozen=True, slots=True)

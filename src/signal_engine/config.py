@@ -394,6 +394,8 @@ def _org(data: Mapping[str, Any]) -> dict[str, Any]:
     org["alert_min_priority"] = int(_num(org, "alert_min_priority", "org"))
     org["account_briefs_top_n"] = int(_num(org, "account_briefs_top_n", "org"))
     org["founder_weekly_capacity"] = int(_num(org, "founder_weekly_capacity", "org"))
+    if org["founder_weekly_capacity"] < 0:
+        raise ConfigError("org.founder_weekly_capacity must be >= 0")
     return org
 
 

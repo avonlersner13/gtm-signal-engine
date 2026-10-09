@@ -122,6 +122,7 @@ and ignores irrelevant files.
 | `pqa_flag` | custom | `PQA_Flag__c` |
 | `primary_play`, `secondary_plays` | custom | `Primary_Play__c`, `Secondary_Plays__c` |
 | `play_owner` | map to `hubspot_owner_id` | `OwnerId` |
+| `play_owner_note` | custom (`over founder capacity` when reassigned) | `Play_Owner_Note__c` |
 | `fit_score`, `intent_score`, `priority_score`, `intent_delta_wow` | custom | `Fit_Score__c`, `Intent_Score__c`, `Priority_Score__c`, `Intent_Delta_WoW__c` |
 | `seats_used`, `trial_days_left`, `blocked_users` | custom | `Seats_Used__c`, `Trial_Days_Left__c`, `Blocked_Users__c` |
 | `est_arr_usd`, `enterprise_uplift`, `churn_risk`, `top_reason` | custom | `Estimated_ARR__c`, `Enterprise_Uplift__c`, `Churn_Risk__c`, `Top_Reason__c` |

@@ -36,7 +36,7 @@ from signal_engine.models import (
     UserFeatures,
     WeekResult,
 )
-from signal_engine.plays import PlayContext, churn_signals, match_plays
+from signal_engine.plays import PlayContext, apply_founder_capacity, churn_signals, match_plays
 from signal_engine.revenue import estimate_revenue
 from signal_engine.scanner import scan_manifests, summarize
 from signal_engine.scoring import AccountInputs, score_account
@@ -190,6 +190,7 @@ def compute_week(
     lifecycle = wk.lifecycle
     views = [_account_view(acct, family, wk) for acct, family in sorted(wk.groups.family.items())]
     views.sort(key=lambda v: (-v.score.priority, v.account_id))
+    views = apply_founder_capacity(views, cfg.org["founder_weekly_capacity"])
     churn = tuple(
         StageEntry("account", v.account_id, "churn_risk", as_of) for v in views if v.churn_risk
     )

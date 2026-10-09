@@ -86,6 +86,12 @@ def test_founder_brief(weeks, cfg) -> None:
     ):
         assert heading in text
     assert "For Arthur." in text
+    founders = [x for x in w2.accounts if x.plays and x.plays[0].owner == "founder"]
+    queued = [x for x in w2.accounts if x.plays and x.plays[0].note == "over founder capacity"]
+    assert len(founders) <= cfg.org["founder_weekly_capacity"]
+    assert (
+        f"{len(founders)} founder touches this week; {len(queued)} queued for GTM engineer" in text
+    )
     assert text.count("- **Why now:**") == 5
     assert "No prior week" in render_founder_brief(w1, cfg)
     assert len(biggest_movers(w2.accounts)) == 3

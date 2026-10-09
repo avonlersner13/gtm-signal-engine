@@ -7,8 +7,8 @@ two are secondary. Templates are filled with the account's real numbers.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -16,6 +16,7 @@ from signal_engine.buying_committee import first_name
 from signal_engine.config import Config, PlayDef
 from signal_engine.models import (
     AccountFeatures,
+    AccountView,
     BuyingCommittee,
     PlayMatch,
     RevenueEstimate,
@@ -26,6 +27,7 @@ from signal_engine.revenue import SECURITY_EVENTS
 from signal_engine.scoring import LANGUAGE_LABELS, plural, singularize_ones
 
 MAX_PLAYS = 3
+OVER_FOUNDER_CAPACITY = "over founder capacity"
 SECURITY_LABELS = {
     "trust_center_visit": "the Trust Center",
     "soc2_report_requested": "our SOC 2 report",
@@ -236,3 +238,30 @@ def match_plays(ctx: PlayContext, cfg: Config) -> tuple[PlayMatch, ...]:
         if len(out) == MAX_PLAYS:
             break
     return tuple(out)
+
+
+def founder_eligible(accounts: Sequence[AccountView]) -> list[AccountView]:
+    """Accounts whose primary play is founder-owned, best first.
+
+    Ranked by play priority, then account priority (ties broken by account id).
+    """
+    eligible = [a for a in accounts if a.plays and a.plays[0].owner == "founder"]
+    return sorted(eligible, key=lambda a: (-a.plays[0].priority, -a.score.priority, a.account_id))
+
+
+def apply_founder_capacity(accounts: Sequence[AccountView], capacity: int) -> list[AccountView]:
+    """Keep the top ``capacity`` founder-owned accounts; queue the rest for the GTM engineer.
+
+    Overflow accounts keep their plays, but every founder-owned play on them moves to
+    ``gtm_engineer`` with the note "over founder capacity". Account order is unchanged.
+    """
+    overflow = {a.account_id for a in founder_eligible(accounts)[capacity:]}
+    return [_queue_for_gtm(a) if a.account_id in overflow else a for a in accounts]
+
+
+def _queue_for_gtm(account: AccountView) -> AccountView:
+    plays = tuple(
+        replace(p, owner="gtm_engineer", note=OVER_FOUNDER_CAPACITY) if p.owner == "founder" else p
+        for p in account.plays
+    )
+    return replace(account, plays=plays)

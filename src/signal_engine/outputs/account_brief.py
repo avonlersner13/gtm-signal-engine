@@ -8,11 +8,11 @@ from signal_engine.buying_committee import UNKNOWN_BUYER, first_name
 from signal_engine.config import Config
 from signal_engine.models import ACCOUNT_STAGES, AccountView, WeekResult
 from signal_engine.outputs.fmt import (
-    OWNER_LABELS,
     contact_line,
     day,
     md_escape,
     money,
+    owner_label,
     signed,
     stage_label,
 )
@@ -190,8 +190,7 @@ def _plays(a: AccountView) -> list[str]:
     for i, p in enumerate(a.plays):
         kind = "Primary" if i == 0 else "Secondary"
         lines += [
-            f"{i + 1}. **{kind}: {p.name}** ({OWNER_LABELS[p.owner]}, SLA {p.sla_hours}h)."
-            f" {p.action}",
+            f"{i + 1}. **{kind}: {p.name}** ({owner_label(p)}, SLA {p.sla_hours}h). {p.action}",
             f"   > {md_escape(p.message)}",
         ]
     return [*lines, ""]

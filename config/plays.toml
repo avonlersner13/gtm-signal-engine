@@ -14,7 +14,8 @@ founder_name = "Arthur"
 alert_channel = "#pipeline-alerts"
 alert_min_priority = 70          # plays at or above this priority produce Slack alerts
 account_briefs_top_n = 25        # per-account briefs for the top N plus every founder play
-founder_weekly_capacity = 8      # founder touches listed by name in the brief
+founder_weekly_capacity = 8      # founder-owned plays kept per week (ranked by play priority, then
+                                 # account priority); the rest go to the GTM engineer, "over founder capacity"
 
 [[plays]]
 id = "trial_ending"
@@ -37,7 +38,7 @@ priority = 95
 owner = "founder"
 sla_hours = 8
 pipeline = true
-params = { min_blocked = 1 }
+params = { min_blocked = 2 }     # tightened from 1 so founder-eligible accounts stay ~5-10% of active
 action = "Same-day outreach to the admin: their engineers are blocked."
 success_metric = "Seats assigned or auto-allocation turned on within 48h"
 template = "Hi {buyer}, heads-up: {blocked_engineers} at {account} {blocked_verb} blocked from CodSpeed runs on private repos because no seat is assigned (automatic seat allocation is off). Want me to walk you through assigning seats, or turn auto-allocation on?"
@@ -102,7 +103,7 @@ priority = 65
 owner = "founder"
 sla_hours = 120
 pipeline = true
-params = { min_fix_prs_merged = 1 }
+params = { min_fix_prs_merged = 2 }
 action = "Case-study and expansion candidate: ask for feedback, offer an AI workflow review."
 success_metric = "Case study agreed or expansion to another team"
 template = "Hi {champion_first}, your team merged {fix_prs} @codspeedbot fix PRs and makes {mcp_calls} MCP calls a month. Would you share what's working? We'd love to feature {account}'s workflow."

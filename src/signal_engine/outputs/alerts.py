@@ -7,7 +7,7 @@ from typing import Any
 
 from signal_engine.config import Config
 from signal_engine.models import AccountView, PlayMatch, WeekResult
-from signal_engine.outputs.fmt import OWNER_LABELS, money, stage_label
+from signal_engine.outputs.fmt import money, owner_label, stage_label
 
 
 def alert_payload(
@@ -20,7 +20,7 @@ def alert_payload(
         ("Account", a.name),
         ("Stage", stage_label(a.stage)),
         ("Priority", f"{a.score.priority} (fit {a.score.fit}, intent {a.score.intent})"),
-        ("Owner / SLA", f"{OWNER_LABELS[play.owner]} / {play.sla_hours}h"),
+        ("Owner / SLA", f"{owner_label(play)} / {play.sla_hours}h"),
         ("Champion", champion),
         (
             "Est. ARR",

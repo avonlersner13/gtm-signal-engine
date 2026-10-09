@@ -33,14 +33,14 @@ reports:
 |---|---|---|---|
 | activation_rescue | 111 | 4% | converted or expanded |
 | outbound | 35 | 0% | converted or expanded |
-| blocked_users | 17 | 76% | converted or expanded |
-| multi_team_spread | 17 | 24% | converted or expanded |
+| multi_team_spread | 18 | 22% | converted or expanded |
 | churn_risk | 16 | 94% | churned |
 | not_addressable | 14 | 0% | converted or expanded |
 | trial_ending | 13 | 77% | converted or expanded |
 | security_review | 12 | 58% | converted or expanded |
+| blocked_users | 11 | 82% | converted or expanded |
 | runner_overage | 11 | 64% | converted or expanded |
-| ai_native_power_user | 6 | 33% | converted or expanded |
+| ai_native_power_user | 5 | 40% | converted or expanded |
 | cap_approaching | 4 | 0% | converted or expanded |
 | walltime_only_stack | 1 | 100% | converted or expanded |
 

@@ -8,15 +8,16 @@ from signal_engine.buying_committee import UNKNOWN_BUYER
 from signal_engine.config import Config
 from signal_engine.models import AccountView, WeekResult
 from signal_engine.outputs.fmt import (
-    OWNER_LABELS,
     contact_line,
     first_sentences,
     md_escape,
     money,
+    owner_label,
     revenue_line,
     signed,
     stage_label,
 )
+from signal_engine.plays import OVER_FOUNDER_CAPACITY, founder_eligible
 
 TOP_N = 5
 MOVERS_N = 3
@@ -30,8 +31,20 @@ def pipeline_accounts(result: WeekResult, cfg: Config) -> list[AccountView]:
 
 
 def founder_touches(result: WeekResult) -> list[AccountView]:
-    """Accounts whose primary play is owned by the founder."""
-    return [a for a in result.accounts if a.plays and a.plays[0].owner == "founder"]
+    """Accounts whose primary play is owned by the founder (within weekly capacity)."""
+    return founder_eligible(result.accounts)
+
+
+def queued_for_gtm(result: WeekResult) -> list[AccountView]:
+    """Founder-eligible accounts reassigned to the GTM engineer (over founder capacity)."""
+    return [a for a in result.accounts if a.plays and a.plays[0].note == OVER_FOUNDER_CAPACITY]
+
+
+def capacity_line(result: WeekResult) -> str:
+    """'8 founder touches this week; 28 queued for GTM engineer'."""
+    n = len(founder_touches(result))
+    touches = "founder touch" if n == 1 else "founder touches"
+    return f"{n} {touches} this week; {len(queued_for_gtm(result))} queued for GTM engineer"
 
 
 def biggest_movers(accounts: Sequence[AccountView], n: int = MOVERS_N) -> list[AccountView]:
@@ -46,28 +59,30 @@ def _headline(result: WeekResult, cfg: Config) -> list[str]:
     enterprise = sum(1 for a in pipe if a.revenue.enterprise_uplift)
     new_pqas = [a for a in result.accounts if a.new_pqa]
     founder = founder_touches(result)
+    queued = queued_for_gtm(result)
     lines = [
         "## Headline",
         "",
         "| New PQAs this week | Pipeline estimate (ARR) | Founder touches this week | PQAs total |",
         "|---|---|---|---|",
         f"| {len(new_pqas)} | {money(total)} across {len(pipe)} accounts"
-        f" (+{enterprise} Enterprise flags) | {len(founder)} |"
+        f" (+{enterprise} Enterprise flags) | {capacity_line(result)} |"
         f" {sum(a.pqa for a in result.accounts)} |",
         "",
     ]
     if new_pqas:
         lines.append("New PQAs: " + ", ".join(a.name for a in new_pqas[:8]) + ".")
         lines.append("")
-    capacity = cfg.org["founder_weekly_capacity"]
     if founder:
-        names = ", ".join(f"{a.name} ({a.plays[0].name.lower()})" for a in founder[:capacity])
-        more = (
-            f", plus {len(founder) - capacity} more in crm_accounts.csv"
-            if len(founder) > capacity
-            else ""
-        )
-        lines += [f"Founder touches, in priority order: {names}{more}.", ""]
+        names = ", ".join(f"{a.name} ({a.plays[0].name.lower()})" for a in founder)
+        lines += [f"Founder touches, in priority order: {names}.", ""]
+    if queued:
+        capacity = cfg.org["founder_weekly_capacity"]
+        lines += [
+            f"Over founder capacity ({capacity}/week), queued for GTM engineer: "
+            f"{len(queued)} accounts (see crm_accounts.csv, play_owner_note).",
+            "",
+        ]
     return lines
 
 
@@ -75,7 +90,7 @@ def _top_account(rank: int, a: AccountView) -> list[str]:
     play = a.plays[0] if a.plays else None
     others = ", ".join(p.name for p in a.plays[1:])
     play_line = (
-        f"{play.name} ({OWNER_LABELS[play.owner]}, SLA {play.sla_hours}h)"
+        f"{play.name} ({owner_label(play)}, SLA {play.sla_hours}h)"
         + (f". Also: {others}" if others else "")
         if play
         else "no play triggered"

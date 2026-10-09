@@ -47,11 +47,10 @@ def test_trial_ending(cfg) -> None:
 
 
 def test_blocked_users_message_addresses_buyer(cfg) -> None:
-    [play] = match_plays(ctx(seats=seats(blocked_users=("a",))), cfg)
+    assert ids(ctx(seats=seats(blocked_users=("a",))), cfg) == []  # min_blocked = 2
+    [play] = match_plays(ctx(seats=seats(blocked_users=("a", "b"))), cfg)
     assert play.play_id == "blocked_users"
-    assert play.message.startswith("Hi Kai, heads-up: 1 engineer at Acme is blocked")
-    two = match_plays(ctx(seats=seats(blocked_users=("a", "b"))), cfg)[0]
-    assert "2 engineers at Acme are blocked" in two.message
+    assert play.message.startswith("Hi Kai, heads-up: 2 engineers at Acme are blocked")
 
 
 def test_cap_approaching(cfg) -> None:
@@ -123,6 +122,8 @@ def test_security_review(cfg) -> None:
 
 def test_ai_native_power_user(cfg) -> None:
     counts = {7: {}, 14: {}, 30: {"mcp_tool_call": 12}, 90: {"codspeedbot_fix_pr_merged": 3}}
+    one = {7: {}, 14: {}, 30: {}, 90: {"codspeedbot_fix_pr_merged": 1}}
+    assert ids(ctx(features=features(first_ts={"mcp_connected": ago(30)}, counts=one)), cfg) == []
     c = ctx(features=features(first_ts={"mcp_connected": ago(30)}, counts=counts))
     [play] = match_plays(c, cfg)
     assert play.play_id == "ai_native_power_user"
@@ -189,7 +190,11 @@ def test_outbound_and_not_addressable(cfg) -> None:
 def test_precedence_and_max_three(cfg) -> None:
     c = ctx(
         seats=seats(
-            trial_active=True, trial_days_left=2, blocked_users=("a",), seats_used=6, over_cap=True
+            trial_active=True,
+            trial_days_left=2,
+            blocked_users=("a", "b"),
+            seats_used=6,
+            over_cap=True,
         ),
         orgs_active=3,
         features=features(last_ts={"trust_center_visit": ago(1), "ryzen_requested": ago(1)}),
@@ -206,3 +211,37 @@ def test_templates_fall_back_without_champion(cfg) -> None:
 
 def test_days_since() -> None:
     assert days_since(ago(3.5), NOW) == 3
+
+
+def test_founder_capacity_keeps_top_n_and_queues_the_rest(cfg, small_ds) -> None:
+    from dataclasses import replace
+
+    from signal_engine.pipeline import compute_week
+    from signal_engine.plays import OVER_FOUNDER_CAPACITY, apply_founder_capacity, founder_eligible
+
+    accounts = list(compute_week(small_ds, cfg, NOW, "2026-10-12").accounts)
+    trial = match_plays(ctx(seats=seats(trial_active=True, trial_days_left=2, seats_used=6)), cfg)
+    ai = match_plays(
+        ctx(
+            features=features(
+                first_ts={"mcp_connected": ago(30)},
+                counts={7: {}, 14: {}, 30: {}, 90: {"codspeedbot_fix_pr_merged": 2}},
+            )
+        ),
+        cfg,
+    )
+    forced = [
+        replace(a, plays=trial if i % 2 else ai, score=replace(a.score, priority=float(i)))
+        for i, a in enumerate(accounts[:6])
+    ]
+    out = apply_founder_capacity(forced, 2)
+    assert [a.account_id for a in out] == [a.account_id for a in forced]
+    kept = founder_eligible(out)
+    assert len(kept) == 2
+    assert all(a.plays[0].play_id == "trial_ending" for a in kept)  # play priority first
+    assert [a.score.priority for a in kept] == [5.0, 3.0]  # then account priority
+    queued = [a for a in out if a.plays[0].note == OVER_FOUNDER_CAPACITY]
+    assert len(queued) == 4
+    assert all(a.plays[0].owner == "gtm_engineer" for a in queued)
+    assert apply_founder_capacity(forced, 0)[0].plays[0].owner == "gtm_engineer"
+    assert len(founder_eligible(apply_founder_capacity(forced, 10))) == 6

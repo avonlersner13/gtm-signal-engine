@@ -104,15 +104,21 @@ Full detail, including why each signal predicts revenue and how to tune it, is i
 
 Details (who acts, what to say, success metrics) are in [docs/PLAYBOOK.md](docs/PLAYBOOK.md).
 
+**Founder capacity.** `founder_weekly_capacity = 8` in `config/plays.toml`. Founder-owned
+plays are ranked by play priority, then account priority. The top 8 stay with the founder,
+and the rest are reassigned to the GTM engineer with the note "over founder capacity".
+Thresholds are tuned so founder-eligible accounts are about 5-10% of active accounts
+(29 of 302, 9.6%, in the demo).
+
 | Priority | Play | Trigger | Owner (SLA) |
 |---|---|---|---|
 | 100 | Trial ending | Pro trial active, ≤ 5 days left | Founder (24h) |
-| 95 | Blocked users | ≥ 1 user blocked without a seat | Founder (8h) |
+| 95 | Blocked users | ≥ 2 users blocked without a seat | Founder (8h) |
 | 90 | Security review | Trust Center / SOC 2 / SSO / security docs in 14 days | GTM engineer, then founder (24h) |
 | 85 | Runner overage | Projected Graviton > 600 min, Ryzen requested, or budget set | GTM engineer (48h) |
 | 80 | Multi-team spread | ≥ 2 GitHub orgs active in one parent account | GTM engineer, then founder (72h) |
 | 75 | Cap approaching | 4-5 of 5 free seats and rising | GTM engineer (72h) |
-| 65 | AI-native power user | MCP connected + @codspeedbot fix PRs merged | Founder (5 days) |
+| 65 | AI-native power user | MCP connected + ≥ 2 @codspeedbot fix PRs merged | Founder (5 days) |
 | 60 | Walltime-only stack | Go/JVM team activated with walltime | GTM engineer (5 days) |
 | 55 | Churn risk | Ignored benchmarks, informational check, Wizard disabled, seats removed, runs -50% | GTM engineer (72h) |
 | 40 | Activation rescue | Installed ≥ 7 days, no baseline | Automated (24h) |
@@ -147,7 +153,7 @@ For Arthur. As of 2026-10-12T09:00:00-07:00. Synthetic demo data; every signal n
 
 | New PQAs this week | Pipeline estimate (ARR) | Founder touches this week | PQAs total |
 |---|---|---|---|
-| 2 | $228,374 across 116 accounts (+12 Enterprise flags) | 36 | 124 |
+| 2 | $221,354 across 110 accounts (+12 Enterprise flags) | 8 founder touches this week; 21 queued for GTM engineer | 124 |
 
 New PQAs: Slate Cloud Technologies, Slate Thread Robotics.
 
@@ -162,7 +168,7 @@ New PQAs: Slate Cloud Technologies, Slate Thread Robotics.
 
 ### 5. Lumen Garden Systems · PQA · priority 87.8 (+11.9)
 - **Why now:** 6 active users, 5-seat cap exceeded, trial expired; 2 engineers blocked without a seat (auto-allocation off); 340 benchmark runs in 30 days
-- **Play:** Blocked users (founder, SLA 8h)
+- **Play:** Blocked users (GTM engineer, over founder capacity, SLA 8h)
 - **Opener:** "Hi Jorgre, heads-up: 2 engineers at Lumen Garden Systems are blocked from CodSpeed runs on private repos because no seat is assigned (automatic seat allocation is off)."
 
 ## Biggest movers

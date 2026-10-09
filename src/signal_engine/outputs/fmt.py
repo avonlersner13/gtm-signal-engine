@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from signal_engine.models import AccountView, Contact
+from signal_engine.models import AccountView, Contact, PlayMatch
 
 STAGE_LABELS = {
     "none": "market only",
@@ -18,6 +18,12 @@ STAGE_LABELS = {
     "opportunity": "opportunity",
 }
 OWNER_LABELS = {"founder": "founder", "gtm_engineer": "GTM engineer", "automated": "automated"}
+
+
+def owner_label(play: PlayMatch) -> str:
+    """'founder', or 'GTM engineer, over founder capacity' for reassigned plays."""
+    label = OWNER_LABELS[play.owner]
+    return f"{label}, {play.note}" if play.note else label
 
 
 def money(value: float) -> str:

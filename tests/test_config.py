@@ -77,6 +77,7 @@ def mutate(fn) -> None:
         (lambda s, p, c: p["plays"][0].update(pipeline="yes"), "expected bool"),
         (lambda s, p, c: p["org"].pop("founder_name"), "missing required key 'founder_name'"),
         (lambda s, p, c: c["seats"].update(free_cap=0), "free_cap must be > 0"),
+        (lambda s, p, c: p["org"].update(founder_weekly_capacity=-1), "must be >= 0"),
         (lambda s, p, c: c["assumptions"].update(outbound_adoption_rate=2), "between 0 and 1"),
     ],
 )
