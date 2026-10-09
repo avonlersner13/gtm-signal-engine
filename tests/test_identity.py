@@ -81,7 +81,7 @@ def test_waterfall_order_prefers_email_over_org(cfg) -> None:
 def test_freemail_domain_never_matches_a_company(cfg) -> None:
     freemail_co = company("c9", domain="webmail.example", github_orgs=())
     idx = build_index([freemail_co])
-    assert resolve_user(user("u1", "pat@mail.example"), idx, None, cfg).method == "unresolved"
+    assert resolve_user(user("u1", "pat@webmail.example"), idx, None, cfg).method == "unresolved"
 
 
 def test_subsidiary_rolls_up_to_parent_but_keeps_child(cfg) -> None:
