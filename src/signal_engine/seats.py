@@ -38,14 +38,23 @@ def empty_status(entity_id: str, free_cap: int) -> SeatStatus:
     )
 
 
+def find_repo(repos: Sequence[Repo], repo_id: str) -> Repo | None:
+    """Return the repo with ``repo_id``, or None if it is unknown."""
+    matches = [repo for repo in repos if repo.repo_id == repo_id]
+    return matches[0] if matches else None
+
+
 def _counts_as_active(
-    e: Event, active_events: frozenset[str], enabled: set[str], private: Mapping[str, bool]
+    e: Event, active_events: frozenset[str], enabled: set[str], repos: Sequence[Repo]
 ) -> bool:
+    """Private-repo PR or report view on a CodSpeed-enabled repo (or a dashboard report)."""
     if e.event_type not in active_events:
         return False
     if e.repo_id is None:
         return e.event_type == "report_viewed"
-    return e.repo_id in enabled and private.get(e.repo_id, False)
+    repo = find_repo(repos, e.repo_id)
+    is_private = repo is not None and repo.is_private
+    return is_private and e.repo_id in enabled
 
 
 def _accumulate(
@@ -56,9 +65,6 @@ def _accumulate(
     as_of: datetime,
 ) -> dict[str, _Acc]:
     """One pass over time-ordered events; repo enablement is tracked as of each event."""
-    private = {r.repo_id: r.is_private for r in repos}
-    horizon = cfg.seat_history_days + cfg.seat_window_days
-    window_start = as_of - cfg.seat_window_days * DAY
     enabled: set[str] = set()
     accs: dict[str, _Acc] = {}
     for e in events:
@@ -75,15 +81,16 @@ def _accumulate(
         acc = accs.get(res.company_id)
         if acc is None:
             acc = accs[res.company_id] = _Acc()
-        if not res.is_bot and _counts_as_active(e, cfg.seat_active_events, enabled, private):
+        if not res.is_bot and _counts_as_active(e, cfg.seat_active_events, enabled, repos):
             ago = int((as_of - e.ts) / DAY)
+            horizon = cfg.seat_history_days + cfg.seat_window_days
             if ago <= horizon:
                 acc.activity.setdefault(e.user_id, set()).add(ago)
         elif etype == "trial_started":
             acc.trial_started = e.ts
         elif etype == "plan_upgraded":
             acc.paid = True
-        elif etype == "user_blocked_no_seat" and e.ts > window_start:
+        elif etype == "user_blocked_no_seat" and e.ts > as_of - cfg.seat_window_days * DAY:
             acc.blocked[e.user_id] = e.ts
         elif etype == "seat_added" and e.props.get("target_user"):
             acc.seated[str(e.props["target_user"])] = e.ts

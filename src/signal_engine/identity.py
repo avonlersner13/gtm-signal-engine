@@ -39,7 +39,7 @@ class DomainIndex:
     corporate: Mapping[str, str]
     alias: Mapping[str, str]
     org: Mapping[str, str]
-    account: Mapping[str, str]
+    companies: Sequence[Company]
 
 
 def normalize_domain(raw: str) -> str:
@@ -68,7 +68,7 @@ def account_roots(companies: Iterable[Company]) -> dict[str, str]:
 
 
 def build_index(companies: Sequence[Company]) -> DomainIndex:
-    """Build domain, alias, org and account lookups in one pass."""
+    """Build domain, alias and org lookups in one pass."""
     corporate, alias, org = {}, {}, {}
     for c in companies:
         corporate[normalize_domain(c.domain)] = c.company_id
@@ -76,17 +76,68 @@ def build_index(companies: Sequence[Company]) -> DomainIndex:
             alias[normalize_domain(d)] = c.company_id
         for o in c.github_orgs:
             org[o.lower()] = c.company_id
-    return DomainIndex(corporate, alias, org, account_roots(companies))
+    return DomainIndex(corporate, alias, org, tuple(companies))
 
 
-def commit_domains(events: Iterable[Event]) -> dict[str, str]:
-    """Most frequent commit-email domain per user, from PR events (one pass)."""
+def find_company(companies: Sequence[Company], company_id: str) -> Company | None:
+    """Return the company with ``company_id``, or None if it is unknown."""
+    for company in companies:
+        if company.company_id == company_id:
+            return company
+    return None
+
+
+def company_for_orgs(orgs: Sequence[str], companies: Sequence[Company]) -> str | None:
+    """Company owning the first of ``orgs`` that any company lists (case-insensitive)."""
+    for org in orgs:
+        wanted = org.lower()
+        owner = None
+        for company in companies:
+            for company_org in company.github_orgs:
+                if company_org.lower() == wanted:
+                    owner = company.company_id
+        if owner is not None:
+            return owner
+    return None
+
+
+def parent_account(company_id: str, companies: Sequence[Company]) -> str:
+    """Walk up the parent chain to the top-level account (cycle-safe)."""
+    node, seen = company_id, {company_id}
+    while True:
+        company = find_company(companies, node)
+        parent = company.parent_id if company else None
+        if not parent or parent in seen or find_company(companies, parent) is None:
+            return node
+        seen.add(parent)
+        node = parent
+
+
+def find_user(users: Sequence[User], user_id: str) -> User | None:
+    """Return the user with ``user_id``, or None if there is no such user."""
+    for user in users:
+        if user.user_id == user_id:
+            return user
+    return None
+
+
+def commit_domains(events: Iterable[Event], users: Sequence[User] | None = None) -> dict[str, str]:
+    """Most frequent commit-email domain per user, from their PR events.
+
+    When ``users`` is given, only PRs authored by one of those users are counted.
+    """
     counts: dict[str, Counter[str]] = {}
-    for e in events:
-        if e.event_type == "pr_authored_private":
-            domain = e.props.get("commit_email_domain")
-            if domain:
-                counts.setdefault(e.user_id, Counter())[normalize_domain(domain)] += 1
+    for event in events:
+        if event.event_type != "pr_authored_private":
+            continue
+        domain = event.props.get("commit_email_domain")
+        if not domain:
+            continue
+        if users is not None and event.user_id not in counts:
+            author = find_user(users, event.user_id)
+            if author is None:
+                continue
+        counts.setdefault(event.user_id, Counter())[normalize_domain(domain)] += 1
     return {uid: min(c.items(), key=lambda kv: (-kv[1], kv[0]))[0] for uid, c in counts.items()}
 
 
@@ -103,15 +154,14 @@ def resolve_user(
     """Run the waterfall for one user."""
     domain = normalize_domain(user.email)
     is_bot = user.github_login.endswith(cfg.bot_suffix)
+    org_company = company_for_orgs(user.github_orgs, index.companies)
     conf = cfg.identity
     match: tuple[str | None, str, float] = (None, UNRESOLVED, 0.0)
     if domain not in cfg.freemail and (cid := _lookup(domain, index.corporate)):
         match = (cid, "corporate_domain", conf["corporate_domain"])
     elif domain not in cfg.freemail and (cid := _lookup(domain, index.alias)):
         match = (cid, "alias_domain", conf["alias_domain"])
-    elif cid := next(
-        (index.org[o.lower()] for o in user.github_orgs if o.lower() in index.org), None
-    ):
+    elif cid := org_company:
         method = "freemail_github_org" if domain in cfg.freemail else "github_org"
         match = (cid, method, conf[method])
     elif commit_domain and (
@@ -119,7 +169,7 @@ def resolve_user(
     ):
         match = (cid, "commit_email_domain", conf["commit_email_domain"])
     company_id, method, confidence = match
-    account_id = index.account.get(company_id) if company_id else None
+    account_id = parent_account(company_id, index.companies) if company_id else None
     return Resolution(user.user_id, company_id, account_id, method, confidence, is_bot)
 
 
@@ -149,11 +199,11 @@ def resolve_identities(
 ) -> IdentityResult:
     """Resolve every user to a company and parent account."""
     index = build_index(companies)
-    commits = commit_domains(events)
+    commits = commit_domains(events, users)
     resolutions = {u.user_id: resolve_user(u, index, commits.get(u.user_id), cfg) for u in users}
     return IdentityResult(
         resolutions=resolutions,
         report=identity_report(resolutions.values()),
         org_to_company=index.org,
-        company_to_account=index.account,
+        company_to_account=account_roots(companies),
     )

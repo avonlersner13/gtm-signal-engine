@@ -34,23 +34,21 @@ from signal_engine.models import Manifest, RepoScan, ScanSummary
 
 WALLTIME_ONLY_LANGUAGES = frozenset({"go", "jvm"})
 
-PY_DEP_RE = re.compile(
-    r"""(?im)(?:^|["'\s\[,])(pytest-codspeed|pytest-benchmark|asv)(?=$|[\s"'<>=~!\[;,@])"""
-)
-PY_CODSPEED_CI_RE = re.compile(r"--codspeed\b")
-CODSPEED_ACTION_RE = re.compile(r"CodSpeedHQ/action@v\d+")
-CARGO_CODSPEED_RE = re.compile(r"\bcargo[- ]codspeed\b")
-GO_BENCH_CI_RE = re.compile(r"\bgo\s+test\b[^\n]*-bench")
-GO_BENCH_FUNC_RE = re.compile(r"(?m)^func\s+Benchmark\w*\s*\(\s*\w+\s+\*testing\.B\s*\)")
-NODE_BENCH_FILE_RE = re.compile(r"\.bench\.(?:ts|js|mts|mjs|cts|cjs|tsx|jsx)$")
-GRADLE_JMH_RE = re.compile(r"org\.openjdk\.jmh:jmh-core|me\.champeau\.jmh")
-GRADLE_CODSPEED_RE = re.compile(r"io\.codspeed\.jmh")
-JMH_FORK_RE = re.compile(r"includeBuild\([^)]*codspeed-jvm/jmh-fork")
-SBT_JMH_RE = re.compile(r"sbt-jmh")
-CPP_GBENCH_RE = re.compile(r"benchmark::benchmark|BENCHMARK_MAIN")
-CPP_CODSPEED_RE = re.compile(r"CodSpeedHQ/codspeed-cpp|-DCODSPEED_MODE=")
-BAZEL_CODSPEED_RE = re.compile(r"codspeed_google_benchmark_compat")
-REQUIREMENTS_RE = re.compile(r"(?:^|/)requirements[^/]*\.txt$")
+PY_DEP_RE = r"""(?im)(?:^|["'\s\[,])(pytest-codspeed|pytest-benchmark|asv)(?=$|[\s"'<>=~!\[;,@])"""
+PY_CODSPEED_CI_RE = r"--codspeed\b"
+CODSPEED_ACTION_RE = r"CodSpeedHQ/action@v\d+"
+CARGO_CODSPEED_RE = r"\bcargo[- ]codspeed\b"
+GO_BENCH_CI_RE = r"\bgo\s+test\b[^\n]*-bench"
+GO_BENCH_FUNC_RE = r"(?m)^func\s+Benchmark\w*\s*\(\s*\w+\s+\*testing\.B\s*\)"
+NODE_BENCH_FILE_RE = r"\.bench\.(?:ts|js|mts|mjs|cts|cjs|tsx|jsx)$"
+GRADLE_JMH_RE = r"org\.openjdk\.jmh:jmh-core|me\.champeau\.jmh"
+GRADLE_CODSPEED_RE = r"io\.codspeed\.jmh"
+JMH_FORK_RE = r"includeBuild\([^)]*codspeed-jvm/jmh-fork"
+SBT_JMH_RE = r"sbt-jmh"
+CPP_GBENCH_RE = r"benchmark::benchmark|BENCHMARK_MAIN"
+CPP_CODSPEED_RE = r"CodSpeedHQ/codspeed-cpp|-DCODSPEED_MODE="
+BAZEL_CODSPEED_RE = r"codspeed_google_benchmark_compat"
+REQUIREMENTS_RE = r"(?:^|/)requirements[^/]*\.txt$"
 
 RUST_BENCH_CRATES = ("divan", "criterion", "bencher")
 NODE_BENCH_PACKAGES = {
@@ -98,7 +96,7 @@ def _basename(path: str) -> str:
 
 def _scan_python(path: str, content: str, f: _Findings) -> None:
     f.languages.add("python")
-    for match in sorted({m.lower() for m in PY_DEP_RE.findall(content)}):
+    for match in sorted({m.lower() for m in re.compile(PY_DEP_RE).findall(content)}):
         if match == "pytest-codspeed":
             f.integrated("python", "pytest-codspeed", path)
         else:
@@ -148,7 +146,7 @@ def _scan_package_json(path: str, content: str, f: _Findings) -> None:
 
 def _scan_go_test(path: str, content: str, f: _Findings) -> None:
     f.languages.add("go")
-    if GO_BENCH_FUNC_RE.search(content):
+    if re.compile(GO_BENCH_FUNC_RE).search(content):
         f.framework("go", "go-testing-bench", path)
 
 
@@ -172,11 +170,11 @@ def _scan_pom(path: str, content: str, f: _Findings) -> None:
 
 def _scan_gradle(path: str, content: str, f: _Findings) -> None:
     f.languages.add("jvm")
-    if GRADLE_CODSPEED_RE.search(content):
+    if re.compile(GRADLE_CODSPEED_RE).search(content):
         f.integrated("jvm", "io.codspeed.jmh", path)
-    elif GRADLE_JMH_RE.search(content):
+    elif re.compile(GRADLE_JMH_RE).search(content):
         f.framework("jvm", "jmh", path)
-    if JMH_FORK_RE.search(content):
+    if re.compile(JMH_FORK_RE).search(content):
         f.integrated("jvm", "codspeed-jvm jmh-fork", path)
 
 
@@ -187,34 +185,34 @@ def _scan_gitmodules(path: str, content: str, f: _Findings) -> None:
 
 def _scan_sbt(path: str, content: str, f: _Findings) -> None:
     f.languages.add("scala")
-    if SBT_JMH_RE.search(content):
+    if re.compile(SBT_JMH_RE).search(content):
         f.framework("scala", "sbt-jmh", path)
 
 
 def _scan_cmake(path: str, content: str, f: _Findings) -> None:
     f.languages.add("cpp")
-    if CPP_CODSPEED_RE.search(content):
+    if re.compile(CPP_CODSPEED_RE).search(content):
         f.integrated("cpp", "codspeed-cpp", path)
-    elif CPP_GBENCH_RE.search(content):
+    elif re.compile(CPP_GBENCH_RE).search(content):
         f.framework("cpp", "google-benchmark", path)
 
 
 def _scan_bazel(path: str, content: str, f: _Findings) -> None:
-    if BAZEL_CODSPEED_RE.search(content):
+    if re.compile(BAZEL_CODSPEED_RE).search(content):
         f.integrated("cpp", "codspeed-cpp (bazel)", path)
 
 
 def _scan_workflow(path: str, content: str, f: _Findings) -> None:
-    has_action = bool(CODSPEED_ACTION_RE.search(content))
+    has_action = bool(re.compile(CODSPEED_ACTION_RE).search(content))
     if has_action:
         f.integrated(None, "CodSpeedHQ/action", path)
-        if GO_BENCH_CI_RE.search(content):
+        if re.compile(GO_BENCH_CI_RE).search(content):
             f.integrated("go", "go test -bench via CodSpeedHQ/action", path)
-    if PY_CODSPEED_CI_RE.search(content):
+    if re.compile(PY_CODSPEED_CI_RE).search(content):
         f.integrated("python", "--codspeed", path)
-    if CARGO_CODSPEED_RE.search(content):
+    if re.compile(CARGO_CODSPEED_RE).search(content):
         f.integrated("rust", "cargo-codspeed", path)
-    if CPP_CODSPEED_RE.search(content):
+    if re.compile(CPP_CODSPEED_RE).search(content):
         f.integrated("cpp", "-DCODSPEED_MODE", path)
 
 
@@ -229,9 +227,9 @@ def classify(path: str) -> str | None:
         return "workflow"
     if path in ("codspeed.yml", "codspeed.yaml"):
         return "codspeed_yml"
-    if name in PYTHON_FILES or REQUIREMENTS_RE.search(path):
+    if name in PYTHON_FILES or re.compile(REQUIREMENTS_RE).search(path):
         return "python"
-    if NODE_BENCH_FILE_RE.search(name):
+    if re.compile(NODE_BENCH_FILE_RE).search(name):
         return "node_bench_file"
     return {
         "Cargo.toml": "cargo",
