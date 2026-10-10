@@ -47,7 +47,10 @@ def test_trial_ending(cfg) -> None:
 
 
 def test_blocked_users_message_addresses_buyer(cfg) -> None:
-    assert ids(ctx(seats=seats(blocked_users=("a",))), cfg) == []  # min_blocked = 2
+    [single] = match_plays(ctx(seats=seats(blocked_users=("a",))), cfg)
+    assert single.play_id == "single_blocked_user"
+    assert (single.owner, single.sla_hours) == ("gtm_engineer", 8)
+    assert single.message.startswith("Hi Kai, quick heads-up: 1 engineer at Acme is blocked")
     [play] = match_plays(ctx(seats=seats(blocked_users=("a", "b"))), cfg)
     assert play.play_id == "blocked_users"
     assert play.message.startswith("Hi Kai, heads-up: 2 engineers at Acme are blocked")
@@ -245,3 +248,9 @@ def test_founder_capacity_keeps_top_n_and_queues_the_rest(cfg, small_ds) -> None
     assert all(a.plays[0].owner == "gtm_engineer" for a in queued)
     assert apply_founder_capacity(forced, 0)[0].plays[0].owner == "gtm_engineer"
     assert len(founder_eligible(apply_founder_capacity(forced, 10))) == 6
+
+
+def test_two_blocked_users_escalate_to_founder_not_single_play(cfg) -> None:
+    plays = match_plays(ctx(seats=seats(blocked_users=("a", "b", "c"))), cfg)
+    assert [p.play_id for p in plays] == ["blocked_users"]
+    assert plays[0].owner == "founder"

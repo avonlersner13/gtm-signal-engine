@@ -12,6 +12,7 @@ Owners: **founder** (Arthur), **GTM engineer**, or **automated** (no human touch
 |---|---|---|---|---|---|
 | 1 | Trial ending | Pro trial active with <= 5 days left | Founder (24h) | Founder calls the champion: "N engineers are using it and the trial ends in X days. 15 minutes so nothing gets blocked?" | Plan upgraded before the trial ends |
 | 2 | Blocked users | >= 2 users blocked without a seat | Founder (8h, same day) | To the admin / economic buyer: "your engineers are blocked from runs on private repos". Offer to assign seats or turn on auto-allocation | Seats assigned or auto-allocation on within 48h |
+| 2b | Single blocked user | Exactly 1 user blocked without a seat | GTM engineer (8h, same day) | Same admin outreach as above, one engineer blocked: assign the seat or turn on auto-allocation | Seat assigned or auto-allocation on within 24h |
 | 3 | Security review | Trust Center, SOC 2 report, SSO page or security docs within 14 days | GTM engineer (24h), then founder | Send the SOC 2 Type II packet (trust.codspeed.io) and the DPA, and offer SSO/SAML and on-prem options | Security review closed; Enterprise conversation opened |
 | 4 | Runner overage | Projected Graviton minutes > 600 this month, or Ryzen requested, or a runner budget set (30 days) | GTM engineer (48h) | Pro/Enterprise runner conversation: budgets, Ryzen for steadier walltime, volume discounts | Runner budget agreed or Enterprise discount quoted |
 | 5 | Multi-team spread | >= 2 GitHub orgs/teams active under one parent account | GTM engineer (72h): map the account, then founder | "CodSpeed is running in N orgs. Consolidate seats and settings under one plan?" | One parent-level agreement |
@@ -35,7 +36,8 @@ e.g. "8 founder touches this week; 21 queued for GTM engineer".
 
 Thresholds are tuned so founder-eligible accounts (founder-owned primary play before
 capacity is applied) stay at about 5-10% of active (signed-up) accounts. Blocked users
-needs >= 2 blocked users, and AI-native needs >= 2 merged fix PRs. Trial ending stays at
+needs >= 2 blocked users (a single blocked user still gets same-day GTM-engineer
+outreach via the `single_blocked_user` play), and AI-native needs >= 2 merged fix PRs. Trial ending stays at
 <= 5 days left.
 
 ## Revenue estimates in every play

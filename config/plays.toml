@@ -44,6 +44,19 @@ success_metric = "Seats assigned or auto-allocation turned on within 48h"
 template = "Hi {buyer}, heads-up: {blocked_engineers} at {account} {blocked_verb} blocked from CodSpeed runs on private repos because no seat is assigned (automatic seat allocation is off). Want me to walk you through assigning seats, or turn auto-allocation on?"
 
 [[plays]]
+id = "single_blocked_user"
+name = "Single blocked user"
+trigger = "single_blocked_user"
+priority = 92
+owner = "gtm_engineer"
+sla_hours = 8
+pipeline = true
+params = { min_blocked = 1, max_blocked = 1 }   # 2+ blocked escalates to the founder play above
+action = "Same-day outreach to the admin: one engineer is blocked without a seat."
+success_metric = "Seat assigned or auto-allocation on within 24h"
+template = "Hi {buyer}, quick heads-up: {blocked_engineers} at {account} {blocked_verb} blocked from CodSpeed runs on private repos because no seat is assigned (automatic seat allocation is off). Want me to walk you through assigning the seat, or turn auto-allocation on so it doesn't happen again?"
+
+[[plays]]
 id = "security_review"
 name = "Security review"
 trigger = "security_review"

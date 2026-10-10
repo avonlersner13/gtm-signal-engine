@@ -97,6 +97,10 @@ def _blocked_users(ctx: PlayContext, p: Mapping[str, float]) -> bool:
     return len(ctx.seats.blocked_users) >= p["min_blocked"]
 
 
+def _single_blocked_user(ctx: PlayContext, p: Mapping[str, float]) -> bool:
+    return p["min_blocked"] <= len(ctx.seats.blocked_users) <= p["max_blocked"]
+
+
 def _cap_approaching(ctx: PlayContext, p: Mapping[str, float]) -> bool:
     s = ctx.seats
     near = s.free_cap - p["min_seats_below_cap"] <= s.seats_used <= s.free_cap
@@ -158,6 +162,7 @@ def _not_addressable(ctx: PlayContext, p: Mapping[str, float]) -> bool:
 TRIGGERS: dict[str, Callable[[PlayContext, Mapping[str, float]], bool]] = {
     "trial_ending": _trial_ending,
     "blocked_users": _blocked_users,
+    "single_blocked_user": _single_blocked_user,
     "cap_approaching": _cap_approaching,
     "multi_team_spread": _multi_team_spread,
     "runner_overage": _runner_overage,

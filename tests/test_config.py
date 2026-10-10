@@ -28,7 +28,7 @@ def test_loads_repo_config() -> None:
     assert cfg.pricing.graviton_free_minutes == 600
     assert cfg.windows == (7, 14, 30, 90)
     assert [p.priority for p in cfg.plays] == sorted((p.priority for p in cfg.plays), reverse=True)
-    assert len(cfg.plays) == 12
+    assert len(cfg.plays) == 13
     assert cfg.as_of_for_week(date(2026, 10, 5)).isoformat() == "2026-10-05T09:00:00-07:00"
 
 

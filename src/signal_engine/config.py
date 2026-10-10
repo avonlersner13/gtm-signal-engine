@@ -15,6 +15,7 @@ KNOWN_TRIGGERS: frozenset[str] = frozenset(
     {
         "trial_ending",
         "blocked_users",
+        "single_blocked_user",
         "cap_approaching",
         "multi_team_spread",
         "runner_overage",

@@ -43,7 +43,7 @@ flowchart LR
 * **Scores** every account on fit and intent (0-100 each), with transparent rules in
   `config/signals.toml`, a 14-day recency half-life, negative signals, and week-over-week
   deltas.
-* **Matches plays** from a 12-play library: trial ending, blocked users, security review,
+* **Matches plays** from a 13-play library: trial ending, blocked users (founder at 2+, GTM engineer for one), security review,
   runner overage, multi-team spread, cap approaching, AI-native, walltime-only, churn
   risk, activation rescue, outbound, not addressable.
 * **Estimates revenue** from documented pricing ($15/user/month annual, $20 monthly,
@@ -114,6 +114,7 @@ Thresholds are tuned so founder-eligible accounts are about 5-10% of active acco
 |---|---|---|---|
 | 100 | Trial ending | Pro trial active, ≤ 5 days left | Founder (24h) |
 | 95 | Blocked users | ≥ 2 users blocked without a seat | Founder (8h) |
+| 92 | Single blocked user | exactly 1 user blocked without a seat | GTM engineer (8h, same day) |
 | 90 | Security review | Trust Center / SOC 2 / SSO / security docs in 14 days | GTM engineer, then founder (24h) |
 | 85 | Runner overage | Projected Graviton > 600 min, Ryzen requested, or budget set | GTM engineer (48h) |
 | 80 | Multi-team spread | ≥ 2 GitHub orgs active in one parent account | GTM engineer, then founder (72h) |
@@ -153,7 +154,7 @@ For Arthur. As of 2026-10-12T09:00:00-07:00. Synthetic demo data; every signal n
 
 | New PQAs this week | Pipeline estimate (ARR) | Founder touches this week | PQAs total |
 |---|---|---|---|
-| 2 | $221,354 across 110 accounts (+12 Enterprise flags) | 8 founder touches this week; 21 queued for GTM engineer | 124 |
+| 2 | $228,374 across 115 accounts (+12 Enterprise flags) | 8 founder touches this week; 21 queued for GTM engineer | 124 |
 
 New PQAs: Slate Cloud Technologies, Slate Thread Robotics.
 
