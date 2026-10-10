@@ -213,8 +213,7 @@ predictive. See [docs/EVALUATION.md](docs/EVALUATION.md) for the method and cave
 
 ## Performance
 
-<!-- CodSpeed badge goes here -->
-[![CodSpeed](https://img.shields.io/badge/CodSpeed-benchmarks-placeholder)](#performance)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/avonlersner13/gtm-signal-engine?utm_source=badge)
 
 The repo is benchmarked with [CodSpeed](https://codspeed.io) using `pytest-codspeed`.
 Benchmarks live in [`benchmarks/`](benchmarks/). Data is generated in cached fixtures, so
@@ -236,6 +235,7 @@ Small = 100 companies / 1,500 users / 20,000 events. Medium = 300 / 4,000 / 60,0
 
 ```bash
 uv run pytest benchmarks/ --codspeed                       # walltime locally
+codspeed run --mode simulation -- uv run pytest benchmarks/ --codspeed  # same as CI
 uv run pytest benchmarks/ --codspeed --codspeed-mode memory
 ```
 
